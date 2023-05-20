@@ -1,6 +1,7 @@
 # DNSTrafficAnalyzer
 
-The DNS Traffic Analysis Tool is a Python script designed for capturing and analyzing DNS traffic. Its purpose is to identify suspicious domain lookups, potential DNS tunneling, and communication with malicious domains.
+The DNSTrafficAnalyzer Tool is a Python script designed for capturing and analyzing DNS traffic. 
+Its purpose is to identify suspicious domain lookups, potential DNS tunneling, and communication with malicious domains - which makes it an essential tool for threat hunting and threat intelligence
 
 ## Features
 
