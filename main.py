@@ -51,7 +51,7 @@ class DNSTrafficAnalyzer:
             logger.error(f"PCAP file '{self.pcap_file}' not found")
 
     def is_suspicious_domain(self, domain):
-        # Basic example implementation: Check if the domain contains a suspicious keyword
+        # Check if the domain contains a suspicious keyword
         suspicious_keywords = ['malware', 'phishing', 'botnet']
         for keyword in suspicious_keywords:
             if keyword in domain:
@@ -59,14 +59,14 @@ class DNSTrafficAnalyzer:
         return False
 
     def is_dns_tunneling(self, dns):
-        # Basic example implementation: Check if the DNS query type is not A or AAAA
+        # Check if the DNS query type is not A or AAAA
         for query in dns.qd:
             if query.type != dpkt.dns.DNS_A and query.type != dpkt.dns.DNS_AAAA:
                 return True
         return False
 
     def is_malicious_communication(self, dns):
-        # Basic example implementation: Check if the DNS response contains a known malicious IP address
+        # Check if the DNS response contains a known malicious IP address
         malicious_ips = ['1.2.3.4', '5.6.7.8']
         for rr in dns.an:
             if isinstance(rr, dpkt.dns.DNSRR):
