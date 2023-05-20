@@ -1,3 +1,4 @@
+![GitHub](https://img.shields.io/github/license/5Fingers/DNSTrafficAnalyzer)
 # DNSTrafficAnalyzer
 
 The DNSTrafficAnalyzer Tool is a Python script designed for capturing and analyzing DNS traffic. 
