@@ -79,7 +79,7 @@ class DNSTrafficAnalyzer:
         return False
 
     def fetch_malicious_ips(self):
-        api_key = "YOUR_VIRUSTOTAL_API_KEY"
+        api_key = "VIRUSTOTAL_API_KEY"
         six_months_ago = int(time.time()) - (180 * 24 * 60 * 60)  # 180 days in seconds
 
         try:
