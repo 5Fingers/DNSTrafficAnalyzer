@@ -10,6 +10,10 @@ Its purpose is to identify suspicious domain lookups, potential DNS tunneling, a
 - Detects suspicious domain lookups by analyzing the queried domain names.
 - Identifies potential DNS tunneling by examining the DNS query types.
 - Alerts on communication with known malicious domains based on DNS responses.
+- Detects DNSSEC validation failures.
+- Identifies DNS amplification attacks.
+- Detects fast flux domains.
+- Identifies DNS rebinding.
 - Logs detected suspicious activities using a configurable logging system.
 
 ## Usage
