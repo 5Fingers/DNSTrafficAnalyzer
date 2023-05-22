@@ -1,11 +1,10 @@
 import logging
-
 import dpkt
+from dpkt import dns
 import socket
 import requests as requests
 import time
 import logging.config
-import logging
 
 logging.config.fileConfig("logging_config.ini")
 logger = logging.getLogger("DNSAnalyzer")
@@ -39,15 +38,31 @@ class DNSTrafficAnalyzer:
                                 for query in dns.qd:
                                     domain = query.name.lower().decode('utf-8')
                                     if self.is_suspicious_domain(domain):
-                                        logger.warning(f'Suspicious domain lookup: {domain}')
+                                        logger.warning(f'Suspicious domain lookup: {domain} from {ip.src} to {ip.dst}')
 
                                 # Check for potential DNS tunneling
                                 if self.is_dns_tunneling(dns):
-                                    logger.warning('Potential DNS tunneling detected')
+                                    logger.warning(f'Potential DNS tunneling detected from {ip.src} to {ip.dst}')
 
                                 # Check for communication with known malicious domains
                                 if self.is_malicious_communication(dns):
-                                    logger.warning('Communication with malicious domain detected')
+                                    logger.warning(f'Communication with malicious domain detected from {ip.src} to {ip.dst}')
+                                    
+                                # Check for DNSSEC validation failures
+                                if self.is_dnssec_validation_failure(dns):
+                                    logger.warning('DNSSEC validation failure detected')
+
+                                # Check for DNS amplification attacks
+                                if self.is_dns_amplification_attack(dns):
+                                    logger.warning('DNS amplification attack detected')
+
+                                # Check for fast flux domains
+                                if self.is_fast_flux_domain(dns):
+                                    logger.warning('Fast flux domain detected')
+
+                                # Check for DNS rebinding
+                                if self.is_dns_rebinding(dns):
+                                    logger.warning('DNS rebinding detected')
 
         except FileNotFoundError:
             logger.error(f"PCAP file '{self.pcap_file}' not found")
@@ -78,6 +93,54 @@ class DNSTrafficAnalyzer:
                     return True
         return False
 
+    def is_dnssec_validation_failure(self, dns):
+        # Check if the DNS response has DNSSEC validation failure flag set
+        if dns.rcode & dpkt.dns.DNS_RCODE_BADSIG:
+            return True
+        return False
+
+    def is_dns_amplification_attack(self, dns):
+        # Check if the DNS response is larger than the query
+        query_size = sum(len(qname) + 1 + 2 + 2 for qname in dns.qd[0].name.split(b'.'))
+        response_size = sum(len(rr.rname) + 2 + 2 + 4 + 2 + 2 + len(rr.rdata) for rr in dns.an)
+        if response_size > query_size:
+            return True
+        return False
+
+    def is_fast_flux_domain(self, dns):
+        # Check if the DNS response contains multiple IP addresses for the same domain
+        ip_addresses = set()
+        for rr in dns.an:
+            if isinstance(rr, dpkt.dns.DNSRR):
+                if rr.type in (dpkt.dns.DNS_A, dpkt.dns.DNS_AAAA):
+                    ip_address = socket.inet_ntoa(rr.rdata)
+                    if ip_address in ip_addresses:
+                        return True
+                    ip_addresses.add(ip_address)
+        return False
+
+    def is_dns_rebinding(self, dns):
+        # Check if the DNS response contains an IP address that does not match the query domain
+        query_domain = dns.qd[0].name.lower().decode('utf-8')
+        for rr in dns.an:
+            if isinstance(rr, dpkt.dns.DNSRR):
+                if rr.type in (dpkt.dns.DNS_A, dpkt.dns.DNS_AAAA):
+                    ip_address = socket.inet_ntoa(rr.rdata)
+                    if not self.ip_matches_domain(ip_address, query_domain):
+                        return True
+        return False
+
+    def ip_matches_domain(self, ip_address, domain):
+        try:
+            reverse_ip = dns.reversename.from_address(ip_address)
+            rdns = str(dns.resolver.query(reverse_ip, "PTR")[0]).lower()
+            return domain in rdns
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+            return False
+        except dns.resolver.Timeout:
+            logger.warning("DNS resolution timeout occurred")
+            return False
+
     def fetch_malicious_ips(self):
         api_key = "VIRUSTOTAL_API_KEY"
         six_months_ago = int(time.time()) - (180 * 24 * 60 * 60)  # 180 days in seconds
@@ -97,4 +160,3 @@ class DNSTrafficAnalyzer:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error occurred while fetching malicious IPs from VirusTotal: {str(e)}")
             return []
-
